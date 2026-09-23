@@ -15,14 +15,17 @@ export function RunPage({ summary }: Readonly<RunPageProps>) {
 
 export interface AssistantPageProps {
   available: boolean;
+  loading: boolean;
+  statusError: boolean;
   message?: string;
+  onRetryStatus: () => void;
   selectedGid?: string;
   runId?: string;
   onNavigate: (view: View) => void;
   onClient: (gid: string) => void;
   onMotif: (motifId: string) => void;
 }
-export function AssistantPage({ available, message, selectedGid, runId, onNavigate, onClient, onMotif }: Readonly<AssistantPageProps>) {
+export function AssistantPage({ available, loading, statusError, message, onRetryStatus, selectedGid, runId, onNavigate, onClient, onMotif }: Readonly<AssistantPageProps>) {
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState<AssistantResponse>();
   const [error, setError] = useState("");
@@ -59,7 +62,7 @@ export function AssistantPage({ available, message, selectedGid, runId, onNaviga
     }
   }
   return <>
-    <Panel title="Статус ассистента"><span className="mg-chip">{available ? "Настроен" : "AI отключён"}</span><p>{message ?? "Проверяем настройки…"}</p><p className="mg-help">Поиск, граф, карточки и выгрузки продолжают работать.</p></Panel>
+    <Panel title="Статус ассистента"><span className="mg-chip">{loading ? "Проверяем" : statusError ? "Статус недоступен" : available ? "Настроен" : "AI отключён"}</span><p>{statusError ? "Не удалось проверить настройки AI." : message ?? "Проверяем настройки…"}</p>{statusError && <button onClick={onRetryStatus}>Проверить снова</button>}<p className="mg-help">Поиск, граф, карточки и выгрузки продолжают работать.</p></Panel>
     <Panel title="Задать вопрос">
       <p className="mg-help">Выбранный клиент: {selectedGid ?? "не выбран"}. Внешнему провайдеру передаются вопрос и выбранный gid; доказательства берутся из сохранённого расчёта.</p>
       <textarea aria-label="Вопрос ассистенту" value={question} onChange={event => setQuestion(event.target.value)} placeholder="Почему у этого клиента такой приоритет?"/>

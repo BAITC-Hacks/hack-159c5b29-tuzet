@@ -31,3 +31,21 @@ test("ассистент передаёт выбранный gid и открыв
   await page.getByRole("button", { name: `Открыть клиента ${gid}` }).click();
   await expect(page.getByText("Карточка клиента", { exact: true })).toBeVisible();
 });
+
+test("статус AI обновляется в открытой вкладке после изменения настройки сервера", async ({ page }) => {
+  let available = false;
+  await page.route("**/api/assistant/status", route => route.fulfill({
+    status: 200,
+    contentType: "application/json",
+    body: JSON.stringify({ available, message: available ? "AI настроен" : "Ключ не задан" }),
+  }));
+
+  await page.goto("/?view=assistant");
+  await expect(page.getByText("AI отключён", { exact: true })).toBeVisible();
+  await page.getByLabel("Вопрос ассистенту").fill("Почему такой приоритет?");
+  await expect(page.getByRole("button", { name: "Спросить" })).toBeDisabled();
+
+  available = true;
+  await expect(page.getByText("Настроен", { exact: true })).toBeVisible({ timeout: 8000 });
+  await expect(page.getByRole("button", { name: "Спросить" })).toBeEnabled();
+});

@@ -62,7 +62,14 @@ export function App() {
   const communityNodes = useQuery({ queryKey: ["community-nodes", clusterId, clusterOffset], enabled: clusterId != null && view === "community", queryFn: () => getJson<Wrapped<Node>>(`/api/nodes?cluster_id=${clusterId}&offset=${clusterOffset}&limit=50`) });
   const disruption = useQuery({ queryKey: ["disruption"], enabled: view === "disruption", queryFn: () => getJson<Wrapped<Disruption>>("/api/disruption") });
   const sensitivity = useQuery({ queryKey: ["sensitivity"], enabled: view === "sensitivity", queryFn: () => getJson<SensitivityResponse>("/api/sensitivity") });
-  const aiStatus = useQuery({ queryKey: ["ai-status"], enabled: view === "assistant", queryFn: () => getJson<{ available: boolean; message: string }>("/api/assistant/status") });
+  const aiStatus = useQuery({
+    queryKey: ["ai-status"],
+    enabled: view === "assistant",
+    queryFn: () => getJson<{ available: boolean; message: string }>("/api/assistant/status"),
+    retry: false,
+    refetchInterval: view === "assistant" ? 5000 : false,
+    refetchOnWindowFocus: "always",
+  });
 
   useEffect(() => { if (!selected && top.data?.items[0]) setSelected(top.data.items[0].gid); }, [top.data, selected]);
   useEffect(() => { document.documentElement.dataset.theme = theme; localStorage.setItem("money-graph-theme", theme); }, [theme]);
@@ -95,7 +102,7 @@ export function App() {
     {view === "community" && <CommunityPage cluster={community.data?.item} loading={community.isLoading} error={community.isError} nodes={communityNodes.data} nodesLoading={communityNodes.isLoading} nodesError={communityNodes.isError} offset={clusterOffset} onPage={setClusterOffset} onClient={openClient} onGraph={openGraph}/>}
     {view === "disruption" && <DisruptionPage items={disruption.data?.items} loading={disruption.isLoading} onClient={openClient}/>}
     {view === "sensitivity" && <SensitivityPage items={sensitivity.data?.items} loading={sensitivity.isLoading} onClient={openClient}/>}
-    {view === "assistant" && <AssistantPage available={aiStatus.data?.available ?? false} message={aiStatus.data?.message} selectedGid={selected} runId={runId} onNavigate={navigate} onClient={openClient} onMotif={openMotif}/>}
+    {view === "assistant" && <AssistantPage available={aiStatus.isSuccess && aiStatus.data.available} loading={aiStatus.isPending} statusError={aiStatus.isError} message={aiStatus.data?.message} onRetryStatus={() => void aiStatus.refetch()} selectedGid={selected} runId={runId} onNavigate={navigate} onClient={openClient} onMotif={openMotif}/>}
     {view === "run" && <RunPage summary={summary.data}/>}
   </Shell>;
 }
